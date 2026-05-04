@@ -1,0 +1,19 @@
+# SmartCleaner Configuration
+# ===========================
+# Configure cleaning behavior and strategies
+
+# Fill strategy for text/string columns
+# Options: custom string value (e.g., "Unknown", "N/A", "MISSING")
+fill_text: "Unknown"
+
+# Fill strategy for numeric columns
+# Options: "median", "mean", "mode"
+fill_numeric: "median"
+
+# Whether to drop columns that are entirely empty (all NaN values)
+# Options: true, false
+drop_empty_columns: true
+
+# Whether to remove duplicate rows
+# Options: true, false
+remove_duplicates: true
