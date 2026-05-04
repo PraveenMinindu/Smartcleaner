@@ -1,0 +1,10 @@
+first_name,last_name,email_address,age,department,salary,notes
+John,Doe,John.Doe@Email.Com,28.0,Engineering,75000.0,Good Performer
+Jane,Smith,Jane.Smith@Email.Com,34.0,Marketing,62000.0,Unknown
+Bob,Johnson,Bob.Johnson@Email.Com,36.0,Sales,58000.0,Needs Improvement
+Alice,Williams,Alice.W@Email.Com,29.0,Hr,54000.0,Unknown
+Carlos,Mendez,Carlos.M@Email.Com,41.0,Engineering,91000.0,Senior Level
+Diana,Prince,Diana.P@Email.Com,36.0,Marketing,64500.0,Unknown
+Eve,Davis,Eve.Davis@Email.Com,52.0,Sales,67000.0,Top Performer
+Bob,Johnson,Bob.Johnson@Email.Com,36.0,Sales,58000.0,Needs Improvement
+Frank,Unknown,Frank.N@Email.Com,45.0,Unknown,83000.0,Unknown

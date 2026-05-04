@@ -1,0 +1,12 @@
+First Name,Last Name ,  Email Address,Age, Department ,Salary,Notes
+John,Doe,john.doe@email.com,28,Engineering,75000,Good performer
+jane,smith,JANE.SMITH@EMAIL.COM,34,Marketing,62000,
+  Bob  ,Johnson,bob.johnson@email.com,,Sales,58000,Needs improvement
+John,Doe,john.doe@email.com,28,Engineering,75000,Good performer
+Alice,Williams, alice.w@email.com ,29, HR ,54000,
+,,,,,,
+Carlos,Mendez,carlos.m@email.com,41,Engineering,91000,Senior level
+  DIANA  ,PRINCE,diana.p@email.com,36,Marketing,,
+Eve,Davis,eve.davis@email.com,52,Sales,67000,Top performer
+Bob,Johnson,bob.johnson@email.com,,Sales,58000,Needs improvement
+Frank,,frank.n@email.com,45,,83000,
