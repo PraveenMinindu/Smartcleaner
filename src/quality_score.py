@@ -43,11 +43,23 @@ def calculate_quality_score(df: pd.DataFrame) -> float:
 
 
 def score_label(score: float) -> str:
+    """
+    Convert a numeric score into a human-readable quality label.
+
+    Ranges:
+      90 - 100  Excellent
+      75 -  89  Good
+      50 -  74  Fair
+      25 -  49  Poor
+       0 -  24  Critical
+    """
     if score >= 90:
         return "Excellent"
     elif score >= 75:
         return "Good"
     elif score >= 50:
         return "Fair"
-    else:
+    elif score >= 25:
         return "Poor"
+    else:
+        return "Critical"
