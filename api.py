@@ -43,19 +43,61 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from src.cleaner import clean_dataset
 from src.quality_score import calculate_quality_score, calculate_quality_metrics, score_label
 from src.schema_drift import save_schema, load_schema, detect_drift, get_drift_summary
+from src.config import settings
 
 
 # ── Create the FastAPI app ────────────────────────────────────────────────────
 app = FastAPI(
     title="SmartCleaner API",
     description="Automated data cleaning and quality scoring for CSV and Excel files.",
-    version="1.0.0",
+    version=settings.API_VERSION,
 )
 
 
 # ── Helper: read uploaded file into DataFrame ─────────────────────────────────
 
+def _check_file_size(contents: bytes, filename: str) -> None:
+    """Reject files larger than MAX_FILE_SIZE_MB with HTTP 413."""
+    if len(contents) > settings.MAX_FILE_SIZE_BYTES:
+        size_mb = len(contents) / (1024 * 1024)
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"File '{filename}' is too large. "
+                f"Size: {size_mb:.1f} MB. "
+                f"Maximum allowed: {settings.MAX_FILE_SIZE_MB} MB."
+            )
+        )
+
+
 def _read_upload(file: UploadFile) -> pd.DataFrame:
+    """Read an uploaded CSV or Excel file into a DataFrame."""
+    filename = file.filename.lower()
+    contents = file.file.read()
+
+    # Check size BEFORE parsing
+    _check_file_size(contents, file.filename)
+
+    try:
+        if filename.endswith(".csv"):
+            df = pd.read_csv(io.BytesIO(contents))
+        elif filename.endswith((".xlsx", ".xls")):
+            df = pd.read_excel(io.BytesIO(contents))
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Unsupported file format. Please upload .csv, .xlsx, or .xls."
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Could not read file '{file.filename}': {str(e)}"
+        )
+
+    return df 
+
     """
     Read an uploaded file (CSV or Excel) into a pandas DataFrame.
 
@@ -113,10 +155,12 @@ def health_check():
         }
     """
     return {
-        "status":    "ok",
-        "service":   "SmartCleaner API",
-        "version":   "1.0.0",
-        "timestamp": datetime.now().isoformat(),
+        "status":           "ok",
+        "service":          "SmartCleaner API",
+        "version":          settings.API_VERSION,
+        "environment":      settings.ENVIRONMENT,
+        "max_file_size_mb": settings.MAX_FILE_SIZE_MB,
+        "timestamp":        datetime.now().isoformat(),
     }
 
 
