@@ -1,0 +1,7 @@
+severity: low
+confidence: low
+exclude_dirs:
+  - tests
+  - venv
+  - .venv
+  - __pycache__
