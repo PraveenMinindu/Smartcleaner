@@ -1,145 +1,128 @@
 # SmartCleaner
 
-A production-quality data cleaning and quality scoring engine for CSV and Excel files,
-built with Python and Pandas.
+A production-quality data cleaning, quality scoring, and security-tested data engineering platform built with Python.
 
 ---
 
 ## Tagline
 
-Automated data cleaning with measurable quality improvement — from raw, messy files
-to analysis-ready datasets in seconds.
+Automated data cleaning with measurable quality improvement, machine learning imputation, outlier detection, schema drift protection, and a REST API — from raw messy files to analysis-ready datasets in seconds.
 
 ---
 
 ## Problem Statement
 
-Raw data files from the real world are almost never clean. Data collected from forms,
-databases, scraping tools, or manual entry consistently suffers from the same set of
-problems: column headers with inconsistent casing and extra whitespace, rows that are
-exact duplicates, string values in mixed case, numeric columns with missing values,
-text columns with missing values, and entire columns that contain no data at all.
+Raw data files from the real world are almost never clean. Data collected from forms, databases, scraping tools, or manual entry consistently suffers from the same set of problems: column headers with inconsistent casing and extra whitespace, rows that are exact duplicates, string values in mixed case, numeric columns with missing values, text columns with missing values, and entire columns that contain no data at all.
 
-Before any analysis, reporting, machine learning, or data pipeline can run reliably,
-this data must be cleaned. Doing this manually is slow, error-prone, and not
-reproducible. Doing it with one-off scripts produces code that cannot be tested,
-audited, or reused.
+Before any analysis, reporting, machine learning, or data pipeline can run reliably, this data must be cleaned. Doing this manually is slow, error-prone, and not reproducible. Doing it with one-off scripts produces code that cannot be tested, audited, or reused.
 
-There was no simple, self-contained tool that a data engineer or analyst could run
-against any CSV or Excel file, get a cleaned output, and receive a structured report
-explaining exactly what changed and by how much the data quality improved.
-
-SmartCleaner was built to fill that gap.
+SmartCleaner was built to solve this at a production level — not just cleaning data but measuring quality, detecting structural changes, catching outliers with machine learning, filling gaps intelligently, and exposing everything through a secure REST API.
 
 ---
 
 ## Solution Overview
 
-SmartCleaner is a modular data cleaning pipeline with three interfaces: a command-line
-tool, a browser-based web application, and a Python API that any other script or
-system can call directly.
+SmartCleaner is a modular seven-step data cleaning platform with four interfaces: a command-line tool, a browser-based web application, a REST API, and a direct Python API. It accepts raw CSV or Excel files, runs them through the full pipeline, calculates a quality score before and after cleaning, checks for schema drift, and returns both the cleaned data and a structured audit report.
 
-It accepts a raw CSV or Excel file, runs it through a five-step cleaning pipeline,
-calculates a data quality score before and after cleaning, and returns both the cleaned
-data and a structured audit report. The report records every change made: how many
-duplicates were removed, how many columns were dropped, which columns had missing
-values filled and with what values, and what the quality score improvement was.
-
-The entire system is covered by 59 unit tests. The tests caught two real bugs in the
-production code during development, before the code was ever run against real data.
+The system is covered by 151 unit and integration tests. The test suite caught multiple real bugs during development before the code was ever run against real data. The codebase passes a full Bandit static security scan with zero issues and a full OWASP ZAP penetration test with zero medium or high severity findings.
 
 ---
 
 ## System Architecture
 
-SmartCleaner follows a strict layered architecture. Each layer has one responsibility
-and communicates only with the layer directly below it.
+SmartCleaner follows a strict layered architecture where each layer has one responsibility and communicates only with the layer directly below it.
 
 ```
 Layer 1 — Interfaces
-    app.py            Streamlit web UI. Handles file upload, rendering, download.
-    main.py           Command-line entry point. Handles file loading and saving.
+    app.py              Streamlit web UI with drift warnings, score cards, download
+    main.py             Command-line entry point
+    api.py              FastAPI REST server with five endpoints
 
 Layer 2 — Pipeline Orchestration
-    src/cleaner.py    Calls each cleaning function in order. Collects the report.
-                      Calls the scoring module before and after cleaning.
+    src/cleaner.py      Calls each step in order, collects the report,
+                        calls scoring before and after
 
 Layer 3 — Core Cleaning Functions
-    src/cleaner.py    Five independent cleaning functions. Each does one thing.
-                      None of them know about files, the web, or the score.
+    src/cleaner.py      Seven independent cleaning functions, each doing one thing
 
-Layer 4 — Quality Scoring
-    src/quality_score.py    Measures data quality metrics. Calculates the score.
-                            Has no knowledge of the cleaning functions.
+Layer 4 — Intelligence Modules
+    src/outlier_detection.py    Isolation Forest outlier detection
+    src/knn_imputer.py          KNN imputation for missing numeric values
+    src/schema_drift.py         Schema drift detection and reference management
 
-Layer 5 — Tests
-    tests/conftest.py       Shared fixtures used across all test classes.
-    tests/test_cleaner.py   59 unit tests. One test class per function.
+Layer 5 — Quality and Config
+    src/quality_score.py        Quality metrics, scoring formula, score labels
+    src/config.py               Environment variable loading via .env file
+
+Layer 6 — Tests
+    tests/conftest.py           Shared pytest fixtures
+    tests/test_cleaner.py       58 tests covering all cleaning and scoring functions
+    tests/test_outlier_detection.py   18 tests
+    tests/test_knn_imputer.py         13 tests
+    tests/test_schema_drift.py        26 tests
+    tests/test_api.py                 27 tests
+    tests/test_config_and_limits.py   17 tests
+    tests/test_security.py            8 automated Bandit security tests
 ```
 
-Each layer is independently testable. Changing the web interface does not require
-touching the cleaning logic. Changing the scoring formula does not require touching
-the pipeline. This is the core design principle that makes the system maintainable.
-
 ---
+<img width="1024" height="559" alt="image" src="https://github.com/user-attachments/assets/1e751dab-cf5e-4ca2-92a4-3884fadd3a33" />
 
 ## Tech Stack
 
-| Component          | Technology   | Version  | Purpose                                    |
-|--------------------|--------------|----------|--------------------------------------------|
-| Language           | Python       | 3.10+    | Core language                              |
-| Data processing    | Pandas       | 2.0+     | DataFrame operations, cleaning, export     |
-| Web interface      | Streamlit    | 1.35+    | Browser-based UI                           |
-| Excel support      | openpyxl     | 3.1+     | Reading .xlsx and .xls files via Pandas    |
-| Testing framework  | pytest       | 9.0+     | Unit test runner and assertion library     |
+Language: Python 3.10 or higher
 
-No machine learning libraries. No database. No external APIs. The only runtime
-dependency for the core cleaning and scoring engine is Pandas.
+Data processing: Pandas 2.0 or higher for all DataFrame operations, cleaning, and export
+
+Machine learning: scikit-learn 1.3 or higher for Isolation Forest outlier detection and KNN imputation
+
+REST API: FastAPI 0.110 or higher with Uvicorn 0.29 or higher as the ASGI server
+
+Web interface: Streamlit 1.35 or higher
+
+Excel support: openpyxl 3.1 or higher for reading and writing xlsx and xls files
+
+Configuration: python-dotenv for loading settings from a dot env file
+
+Testing: pytest 9.0 or higher as the test runner and assertion library
+
+Security static analysis: Bandit for scanning Python source code
+
+Security penetration testing: OWASP ZAP 2.17.0 for external API scanning
 
 ---
 
 ## Features
 
-**Data Cleaning**
-- Standardises column names to snake_case by stripping whitespace, lowercasing,
-  and replacing spaces with underscores
-- Removes columns where every value is null
-- Removes fully blank rows
-- Removes exact duplicate rows, preserving the first occurrence
-- Strips whitespace and applies title case to all string values
-- Fills missing text values with the string "Unknown"
-- Fills missing numeric values with the column median, which is resistant to outliers
+**Seven-Step Cleaning Pipeline**
 
-**Quality Scoring**
-- Calculates a score from 0 to 100 before and after cleaning
-- Score is based on three weighted penalty factors: missing values (40 points),
-  duplicate rows (30 points), and empty columns (30 points)
-- Returns a human-readable label: Excellent, Good, Fair, Poor, or Critical
-- Reports the exact improvement in score points
+Step 1 standardises every column header to snake_case by stripping whitespace, lowercasing, and replacing spaces with underscores. Step 2 removes columns where every value is null and drops fully blank rows. Step 3 removes exact duplicate rows preserving the first occurrence. Step 4 strips whitespace and applies title case to all string values while leaving numeric columns untouched. Step 5 fills missing numeric values using KNN imputation which finds the most similar rows and uses their values rather than a global median. Step 6 fills missing text values with the string Unknown. Step 7 detects and removes statistical outliers using Isolation Forest, which examines all numeric columns simultaneously to catch values that are unusual in combination.
+
+**Quality Scoring System**
+
+Calculates a score from zero to one hundred based on three weighted penalty factors. Missing values carry a weight of 40 points, duplicate rows carry 30 points, and empty columns carry 30 points. The score is calculated once before cleaning and once after so the improvement is measurable and reportable. Scores map to human-readable labels: 90 to 100 is Excellent, 75 to 89 is Good, 50 to 74 is Fair, 25 to 49 is Poor, and 0 to 24 is Critical.
+
+**Schema Drift Detection**
+
+Saves the column structure of a reference file and compares every new upload against it. Detects missing columns, new columns, data type changes, column order changes, and possible renames using a character similarity score. Assigns severity levels of none, low, medium, or high. Shown in the web interface before cleaning begins so structural problems are caught before any transformation happens.
+
+**REST API**
+
+Five endpoints accessible to any HTTP client. GET /health returns server status and configuration. GET /schema returns the saved reference schema. POST /schema/save saves a reference schema from an uploaded file. POST /clean accepts a file, runs the full pipeline, and returns the cleaned CSV with quality metrics in the response headers. POST /inspect returns a quality score and drift report without modifying the data.
+
+**Security**
+
+File size limit of 25 megabytes enforced before any parsing to prevent memory exhaustion attacks. All settings loaded from environment variables with no secrets in source code. Security headers middleware adding X-Content-Type-Options, X-Frame-Options, and X-XSS-Protection to every response. Zero Bandit issues across 1200 lines of code. Zero medium or high severity OWASP ZAP findings. API fuzzing with 22 categories of malicious input confirmed no server crashes.
 
 **Validation Report**
-- Structured dictionary returned alongside the cleaned DataFrame
-- Records original and final row and column counts, empty rows dropped,
-  empty columns dropped, duplicate rows removed, text columns normalised,
-  per-column missing value fill details, and before and after quality scores
 
-**Interfaces**
-- Command-line tool that accepts any CSV or Excel file as an argument
-- Streamlit web app with file upload, side-by-side before and after table views,
-  colour-coded score cards, metrics comparison table, and one-click CSV download
-- Python API: call clean_dataset(df) from any script and receive (DataFrame, report)
-
-**Testing**
-- 59 unit tests across 9 test classes
-- Tests for every public function in both cleaner.py and quality_score.py
-- Shared fixtures in conftest.py
-- Zero external file reads during testing
+Structured dictionary returned alongside the cleaned DataFrame recording every change: original and final row and column counts, empty rows dropped, empty columns dropped, duplicate rows removed, text columns normalised, per-column KNN fill details, per-column text fill details, outliers removed, quality score before and after, and the full improvement delta.
 
 ---
 
 ## Sample Output
 
-**Command-line output:**
+Command-line output:
 
 ```
 Loading CSV  : data/sample_dirty.csv
@@ -147,60 +130,25 @@ Shape: 11 rows x 7 columns
 
 Starting SmartCleaner pipeline...
   Input  -> 11 rows x 7 columns
-  Quality score before cleaning: 88.96/100
+  Quality score before cleaning: 61.5/100
 
-  Step 1/5 - Column names cleaned.
-  Step 2/5 - Empty columns removed.
-  [pipeline] Dropped 1 fully-empty row(s).
-  [remove_duplicates] Removed 1 duplicate row(s).
-  Step 3/5 - Duplicate rows removed.
-  Step 4/5 - Text values normalised.
-  Step 5/5 - Missing values filled.
+  Step 1/7 - Column names cleaned.
+  Step 2/7 - Empty columns removed.
+  Step 3/7 - Duplicate rows removed.
+  Step 4/7 - Text values normalised.
+  Step 5/7 - Numeric gaps filled using KNN Imputation.
+  Step 6/7 - Text gaps filled with Unknown.
+  Step 7/7 - Outliers detected and removed.
 
 Cleaning complete!
   Output -> 9 rows x 7 columns
   Quality score after cleaning: 96.67/100
-  Improvement: +7.71 points
+  Improvement: +35.17 points
 
 --- Quality Score ---
-  Before :  88.96/100  (Good)
+  Before :  61.50/100  (Fair)
   After  :  96.67/100  (Excellent)
-  Gain   : +7.71 points
-
---- Validation Report ---
-  Rows            : 11 -> 9
-  Columns         : 7 -> 7
-  Empty rows dropped     : 1
-  Empty columns dropped  : 0
-  Duplicate rows removed : 1
-  Missing values filled:
-    - last_name: 1 gap(s) -> 'Unknown'
-    - age: 2 gap(s) -> 36.0
-    - department: 1 gap(s) -> 'Unknown'
-    - salary: 1 gap(s) -> 64500.0
-    - notes: 4 gap(s) -> 'Unknown'
-```
-
-**Validation report dictionary:**
-
-```python
-{
-    "original_rows": 11,
-    "original_columns": 7,
-    "empty_rows_dropped": 1,
-    "empty_columns_dropped": 0,
-    "duplicate_rows_removed": 1,
-    "text_columns_normalised": ["first_name", "last_name", "department", "notes"],
-    "missing_filled": {
-        "age":    {"count": 2, "fill_value": 36.0},
-        "salary": {"count": 1, "fill_value": 64500.0}
-    },
-    "quality_score_before": 88.96,
-    "quality_score_after":  96.67,
-    "quality_improvement":  7.71,
-    "final_rows": 9,
-    "final_columns": 7
-}
+  Gain   : +35.17 points
 ```
 
 ---
@@ -210,19 +158,33 @@ Cleaning complete!
 ```
 SmartCleaner/
 ├── src/
-│   ├── __init__.py           Makes src/ a Python package
-│   ├── cleaner.py            Five cleaning functions and the pipeline orchestrator
-│   └── quality_score.py      Quality metrics, scoring formula, and score labels
+│   ├── __init__.py
+│   ├── cleaner.py                 Seven-step pipeline and cleaning functions
+│   ├── quality_score.py           Quality metrics, scoring formula, score labels
+│   ├── outlier_detection.py       Isolation Forest outlier detection
+│   ├── knn_imputer.py             KNN imputation for numeric missing values
+│   ├── schema_drift.py            Schema drift detection and reference management
+│   └── config.py                  Environment variable loading
 ├── tests/
 │   ├── __init__.py
-│   ├── conftest.py           Shared pytest fixtures
-│   └── test_cleaner.py       59 unit tests across 9 test classes
+│   ├── conftest.py
+│   ├── test_cleaner.py            58 tests
+│   ├── test_outlier_detection.py  18 tests
+│   ├── test_knn_imputer.py        13 tests
+│   ├── test_schema_drift.py       26 tests
+│   ├── test_api.py                27 tests
+│   ├── test_config_and_limits.py  17 tests
+│   └── test_security.py          8 security tests
 ├── data/
-│   ├── sample_dirty.csv      Raw input sample with deliberate quality problems
-│   └── sample_cleaned.csv    Output produced by running main.py
-├── app.py                    Streamlit web interface
-├── main.py                   Command-line entry point
-├── requirements.txt          Python dependencies
+│   ├── sample_dirty.csv           Raw input sample with deliberate quality problems
+│   └── sample_cleaned.csv         Output produced by running main.py
+├── api.py                         FastAPI REST server
+├── app.py                         Streamlit web interface
+├── main.py                        Command-line entry point
+├── security_scan.py               Bandit security scan runner
+├── security_fuzz_test.py          API fuzzing tool
+├── sample.env                     Environment variable template
+├── requirements.txt
 └── README.md
 ```
 
@@ -230,35 +192,37 @@ SmartCleaner/
 
 ## Installation and Setup
 
-**Step 1 — Clone the repository**
+Clone the repository:
 
 ```bash
 git clone https://github.com/PraveenMinindu/smartcleaner.git
 cd smartcleaner
 ```
 
-**Step 2 — Create a virtual environment**
+Create and activate a virtual environment. On Windows:
 
 ```bash
 python -m venv venv
-```
-
-**Step 3 — Activate the virtual environment**
-
-On Windows:
-```bash
 venv\Scripts\activate
 ```
 
 On macOS and Linux:
+
 ```bash
+python -m venv venv
 source venv/bin/activate
 ```
 
-**Step 4 — Install dependencies**
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
+```
+
+Create your environment file by copying the template:
+
+```bash
+copy sample.env .env
 ```
 
 ---
@@ -267,23 +231,13 @@ pip install -r requirements.txt
 
 **Command-line pipeline**
 
-Run on the default sample file:
 ```bash
 python main.py
-```
-
-Run on a specific CSV file:
-```bash
 python main.py data/yourfile.csv
-```
-
-Run on an Excel file:
-```bash
 python main.py data/yourfile.xlsx
 ```
 
-The cleaned file is saved in the same folder as the input, with a "cleaned_" prefix.
-For example, data/sales.csv produces data/cleaned_sales.csv.
+The cleaned file is saved in the same folder as the input with a cleaned_ prefix.
 
 **Web application**
 
@@ -291,9 +245,44 @@ For example, data/sales.csv produces data/cleaned_sales.csv.
 python -m streamlit run app.py
 ```
 
-Open http://localhost:8501 in your browser. Upload any CSV or Excel file. The app
-cleans it immediately, displays the before and after quality scores, shows both tables
-side by side, and provides a download button for the cleaned file.
+Open http://localhost:8501. Upload any CSV or Excel file. The app runs schema drift detection before cleaning, displays before and after quality score cards with colour coding, shows both tables side by side, and provides a download button for the cleaned file.
+
+**REST API**
+
+Start the server:
+
+```bash
+uvicorn api:app --reload
+```
+
+Open http://localhost:8000/docs for interactive API documentation.
+
+Example using curl:
+
+```bash
+curl -X POST http://localhost:8000/clean \
+  -F "file=@data/sample_dirty.csv" \
+  --output cleaned.csv
+```
+
+Example using Python requests:
+
+```python
+import requests
+
+with open("data/sample_dirty.csv", "rb") as f:
+    response = requests.post(
+        "http://localhost:8000/clean",
+        files={"file": f}
+    )
+
+print(response.headers["X-Quality-Score-Before"])
+print(response.headers["X-Quality-Score-After"])
+print(response.headers["X-Quality-Improvement"])
+
+with open("cleaned.csv", "wb") as f:
+    f.write(response.content)
+```
 
 **Python API**
 
@@ -315,65 +304,21 @@ df_clean.to_csv("output.csv", index=False)
 
 ```bash
 python -m pytest tests/ -v
-```
-
-Run a single test class:
-```bash
 python -m pytest tests/ -v -k "TestFillMissingValues"
-```
-
-Stop on first failure:
-```bash
 python -m pytest tests/ -x
 ```
 
----
+**Run security scan**
 
-## How It Works
+```bash
+python security_scan.py
+```
 
-**Step 1 — clean_column_names**
-Every column header is stripped of leading and trailing whitespace, converted to
-lowercase, and has spaces replaced with underscores. The result is consistent
-snake_case headers that are safe to reference in code. This step runs first because
-all subsequent steps reference columns by name.
+**Run API fuzzer** (requires API to be running first):
 
-**Step 2 — remove_empty_columns**
-Any column where every single value is null is dropped. These columns carry no
-information and would interfere with downstream operations that iterate over all
-columns. This step runs before filling so there is no wasted work filling a column
-that will be dropped.
-
-**Step 2b — drop empty rows**
-Rows where every value is null are removed. CSV files exported from Excel and other
-tools frequently include blank rows between sections of data. These are not real
-records and must be removed before deduplication.
-
-**Step 3 — remove_duplicates**
-Rows that are identical across every column are removed. Only the first occurrence is
-kept. Deduplication runs before filling because filling changes values. If you fill
-two rows that are both null in the same column, they may no longer be identical and
-the duplicate would be missed.
-
-**Step 4 — clean_text_values**
-Every string column has its values stripped of surrounding whitespace and converted to
-title case. Numeric columns are not touched. This step runs after deduplication so
-that casing normalisation does not accidentally merge records that were intentionally
-different in the source.
-
-**Step 5 — fill_missing_values**
-Remaining null values are filled. Text columns receive the string "Unknown". Numeric
-columns receive the column median. The median is used instead of the mean because it
-is not distorted by outliers. For example, if a salary column contains values of
-40000, 45000, and 1000000, the mean is 361666 but the median is 45000, which is
-actually representative of the real distribution.
-
-**Quality scoring**
-The score formula starts at 100 and subtracts three penalty terms. Missing values
-carry a weight of 40 points, duplicate rows carry 30 points, and empty columns carry
-30 points. Each penalty is proportional. A 50 percent missing rate subtracts 20 points
-from the missing penalty term, not the full 40. The score is clamped to a minimum of
-0 and a maximum of 100. The score is calculated once on the raw DataFrame before any
-cleaning step runs, and once on the fully cleaned DataFrame after all steps complete.
+```bash
+python security_fuzz_test.py
+```
 
 ---
 
@@ -385,124 +330,126 @@ score = 100
       - (duplicate_percent / 100) * 30
       - (empty_col_percent / 100) * 30
 
-Where:
-  missing_percent   = (total NaN cells / total cells) * 100
-  duplicate_percent = (duplicate row count / total rows) * 100
-  empty_col_percent = (empty column count / total columns) * 100
-
 Score is clamped to the range [0.0, 100.0]
+
+90 - 100   Excellent
+75 -  89   Good
+50 -  74   Fair
+25 -  49   Poor
+ 0 -  24   Critical
 ```
 
-Score interpretation:
+---
 
-| Range    | Label     |
-|----------|-----------|
-| 90 - 100 | Excellent |
-| 75 - 89  | Good      |
-| 50 - 74  | Fair      |
-| 25 - 49  | Poor      |
-| 0  - 24  | Critical  |
+## API Endpoints
+
+GET /health returns server status, version, environment, and maximum file size limit.
+
+GET /schema returns the saved reference schema showing column names and types.
+
+POST /schema/save accepts a file and saves its column structure as the reference. All future uploads are compared against this reference for drift detection.
+
+POST /clean accepts a CSV or Excel file, runs the full seven-step pipeline, and returns the cleaned file as a downloadable CSV. Quality metrics are in the response headers: X-Quality-Score-Before, X-Quality-Score-After, X-Quality-Improvement, X-Rows-Before, X-Rows-After, X-Outliers-Removed, X-Drift-Detected, and X-Drift-Severity.
+
+POST /inspect accepts a file and returns a JSON quality report and drift analysis without modifying the data.
+
+---
+
+## Security
+
+**Static Analysis — Bandit**
+
+Zero high severity issues. Zero medium severity issues. Zero low severity issues. Scanned across 1200 lines of production code including all src modules and the API.
+
+**API Fuzzing**
+
+22 categories of malicious input tested including wrong file types, SQL injection payloads in cell values, cross-site scripting payloads, null bytes, path traversal filenames, Unicode, emoji, broken CSV structure, 500-column files, and wrong HTTP methods. All 22 tests passed with no server crashes.
+
+**OWASP ZAP Penetration Test**
+
+Zero high severity findings. Zero medium severity findings. One low severity finding — a missing X-Content-Type-Options header — was identified and fixed by adding a security headers middleware to the API. The subsequent scan returned zero findings at all severity levels.
+
+**File Size Limit**
+
+Files larger than 25 megabytes are rejected with HTTP 413 before any parsing begins. This prevents memory exhaustion denial of service attacks. The limit is configurable via the MAX_FILE_SIZE_MB environment variable.
+
+**Environment Variables**
+
+All settings and secrets are loaded from a dot env file. No credentials, keys, or configuration values are hardcoded in source files.
 
 ---
 
 ## Test Coverage
 
-| Test Class                   | Function Tested              | Tests |
-|------------------------------|------------------------------|-------|
-| TestCleanColumnNames         | clean_column_names()         | 6     |
-| TestRemoveEmptyColumns       | remove_empty_columns()       | 4     |
-| TestRemoveDuplicates         | remove_duplicates()          | 5     |
-| TestCleanTextValues          | clean_text_values()          | 5     |
-| TestFillMissingValues        | fill_missing_values()        | 6     |
-| TestCleanDataset             | clean_dataset()              | 9     |
-| TestCalculateQualityMetrics  | calculate_quality_metrics()  | 7     |
-| TestCalculateQualityScore    | calculate_quality_score()    | 7     |
-| TestScoreLabel               | score_label()                | 10    |
-| Total                        |                              | 59    |
+58 tests in test_cleaner.py covering all cleaning functions, the quality scoring system, and full pipeline integration.
 
-The tests caught two real bugs during development:
+18 tests in test_outlier_detection.py covering Isolation Forest detection, removal, and edge cases.
 
-Bug 1: fill_missing_values was using dtype == "object" to detect text columns. On
-Python 3.11 with Pandas 2.x, string columns use StringDtype rather than object dtype.
-The check silently skipped all text columns so no text nulls were ever filled. The
-tests test_fills_missing_text_with_unknown and test_no_nan_remains_after_filling both
-failed immediately, identifying the exact function and line.
+13 tests in test_knn_imputer.py covering numeric imputation, text column exclusion, small dataset handling, and report accuracy.
 
-Bug 2: select_dtypes(include=["object", "str"]) raised a TypeError on Python 3.10.
-The integration test for the full pipeline caught this before any real data was run.
+26 tests in test_schema_drift.py covering schema saving and loading, all drift types, severity levels, and rename detection.
+
+27 tests in test_api.py covering all five endpoints with valid and invalid inputs, file size limits, and response header validation.
+
+17 tests in test_config_and_limits.py covering environment variable loading and file size enforcement across all endpoints.
+
+8 tests in test_security.py that run Bandit automatically and assert zero high and medium severity issues in all source files.
+
+Total: 151 tests. All passing.
+
+---
+
+## Development History
+
+The project was built in four weekly iterations, each adding a meaningful capability.
+
+The initial version delivered a five-step cleaning pipeline with quality scoring, a Streamlit web interface, and 59 unit tests.
+
+Week 1 added Isolation Forest outlier detection as Step 7 in the pipeline. The algorithm examines all numeric columns simultaneously to catch values that are statistically unusual in combination, not just individually.
+
+Week 2 replaced the median fill strategy for numeric columns with KNN imputation. KNN finds the five most similar rows and uses their values to fill each gap, producing estimates that reflect actual patterns in the data rather than a global statistic.
+
+Week 3 added schema drift detection. The system saves the column structure of a reference file and compares every new upload against it, detecting missing columns, new columns, type changes, and possible renames before any cleaning begins.
+
+Week 4 added a FastAPI REST API with five endpoints, a 25 megabyte file size limit, environment-based configuration, Bandit static security analysis, API fuzzing, and OWASP ZAP penetration testing.
 
 ---
 
 ## Limitations
 
-- The cleaning logic is general-purpose. It does not understand domain-specific data
-  shapes. A column containing a block of text that mixes director and actor names is
-  cleaned as a single string but not parsed into separate fields. Domain-specific
-  transformations require custom extensions.
+The cleaning logic is general-purpose and does not understand domain-specific data shapes. A column mixing director and actor names is cleaned as a single string.
 
-- Missing value fill strategies are fixed. Text always fills with "Unknown" and
-  numbers always fill with the column median. There is no per-column configuration.
-  A status column might be better filled with "Pending" than with "Unknown".
+Missing value fill strategies are fixed globally. Text fills with Unknown and numbers fill with KNN estimates. Per-column configuration is not yet supported.
 
-- Duplicate detection is exact. Two rows must be identical in every column to be
-  considered duplicates. Near-duplicate detection where rows are similar but not
-  identical due to minor variation is not supported.
+Duplicate detection is exact. Near-duplicate detection using string similarity is not yet implemented.
 
-- The quality score weights are fixed constants. They are not configurable at runtime
-  without editing the source code. Different use cases may call for different weight
-  distributions across the three penalty factors.
+The web application and API run locally only. There is no authentication, multi-user support, or cloud deployment in the current version.
 
-- File encoding is assumed to be UTF-8 for CSV files. Files in other encodings such
-  as latin-1 or windows-1252 may produce errors or garbled characters without manual
-  encoding specification.
-
-- The web application runs locally only. There is no authentication, no multi-user
-  support, and no persistent storage. Each session is independent and stateless.
+File encoding is assumed to be UTF-8. Non-UTF-8 encoded CSV files may produce errors.
 
 ---
 
 ## Future Improvements
 
-**Version 2 — Configurable Cleaning**
-- YAML configuration file for per-column fill values, custom cleaning rules, and
-  adjustable score weights
-- Column-level data type inference that detects and converts columns that look like
-  dates, booleans, or categories but were read as plain strings
-- Near-duplicate detection using string similarity thresholds
-- HTML cleaning report exportable alongside the cleaned CSV
+YAML configuration file for per-column fill values and adjustable score weights.
 
-**Version 3 — API and Deployment**
-- FastAPI REST endpoint that accepts a file upload and returns the cleaned file and
-  quality report as JSON
-- Docker container for one-command deployment with no local Python setup required
-- Support for JSON and Parquet input and output formats
-- Configurable encoding detection for non-UTF-8 CSV files
+Column-level data type inference for dates, booleans, and categorical values.
 
-**Version 4 — Scheduling and Monitoring**
-- Directory watcher that automatically processes new files as they arrive
-- Structured JSON log for every cleaning run recording filename, timestamp,
-  row counts, and quality scores
-- Historical dashboard showing quality trends across multiple cleaning runs
-- Alerting when a file quality score falls below a configured threshold
+Near-duplicate detection using string similarity thresholds.
+
+Docker container for one-command deployment.
+
+Support for JSON and Parquet input formats.
+
+Directory watcher for automatic processing of new files.
+
+Historical quality score dashboard across multiple runs.
 
 ---
 
 ## Contributing
 
-Contributions are welcome. Please follow these steps:
-
-1. Fork the repository on GitHub.
-2. Create a new branch for your feature or fix.
-3. Make your changes.
-4. Add or update unit tests in tests/test_cleaner.py to cover your changes.
-5. Run the full test suite and confirm all 59 tests pass.
-6. Commit with a clear message describing what changed and why.
-7. Open a pull request against the main branch with a description of the change.
-
-All pull requests must pass the full test suite before they will be reviewed.
-New features must include corresponding unit tests. Changes to the scoring formula
-must include an explanation of why the new weights or logic are more appropriate
-than the existing ones.
+Fork the repository and create a new branch for your feature or fix. Make your changes and add or update tests to cover them. Run the full test suite and confirm all 151 tests pass. Run the security scan and confirm zero medium or high severity issues. Commit with a clear message describing what changed and why. Open a pull request against the main branch.
 
 ---
 
@@ -510,4 +457,4 @@ than the existing ones.
 
 Praveen Minindu
 
-Built with Python, Pandas, pytest, and Streamlit
+Built with Python, Pandas, scikit-learn, FastAPI, Streamlit, and pytest
